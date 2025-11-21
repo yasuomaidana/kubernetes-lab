@@ -3,15 +3,8 @@
 {
   "name": "GitHub Codespaces (Default)",
   "build": {
-    "dockerfile": "Dockerfile",
+    "dockerfile": ".devcontainer/Dockerfile",
     "context": ".."
-  },
-  "features": {
-    "ghcr.io/devcontainers/features/kubectl-helm-minikube": {
-      "version": "latest",
-      "helm": "latest",
-      "minikube": "latest"
-    }
   },
   // Configure tool-specific properties.
   "customizations": {
