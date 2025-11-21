@@ -3,9 +3,12 @@
 {
   "name": "GitHub Codespaces (Default)",
   "build": {
-    "dockerfile": ".devcontainer/Dockerfile",
+    "dockerfile": "Dockerfile",
     "context": ".."
   },
+  "features": {
+		"ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {}
+	  },
   // Configure tool-specific properties.
   "customizations": {
     // Configure properties specific to VS Code.
@@ -59,10 +62,5 @@
     "--privileged",
     "--init"
   ],
-  // Use 'forwardPorts' to make a list of ports inside the container available locally.
-  // "forwardPorts": [],
-
-  // "oryx build" will automatically install your dependencies and attempt to build your project
-  //"postCreateCommand": "oryx build -p virtualenv_name=.venv --log-file /tmp/oryx-build.log --manifest-dir /tmp || echo 'Could not auto-build. Skipping.'"
   "postCreateCommand": "bash setup.sh"
 }
