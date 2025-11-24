@@ -11,6 +11,9 @@
 4. Hover over link and "follow link"
 5. Create a deployment:
    `kubectl create deployment hello-node --image=registry.k8s.io/e2e-test-images/agnhost:2.39 -- /agnhost netexec --http-port=8080`
+    > Note: The `--` separates `kubectl` options from the command executed inside the container. `agnhost` is the test
+    image and `netexec` is its network helper subcommand; `--http-port=8080` tells `netexec` to serve HTTP on port
+    `8080`.
 6. View deployment: `kubectl get deployments`
 7. View pods:  `kubectl get pods`
 8. Create service and expose it: `kubectl expose deployment hello-node --type=LoadBalancer --port=8080`
