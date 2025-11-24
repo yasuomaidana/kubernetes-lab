@@ -1,19 +1,22 @@
 ## Task 2: Deploy with Kubernetes FastAPI app
 
-1.  Push container to DockerHub (Optional): i.e.
-    `docker build -t <hub-user>/<repo-name>[:<tag>]` and `docker push <hub-user>/<repo-name>:<tag>`
-    Example of a pushed FastAPI container here:  https://hub.docker.com/repository/docker/noahgift/fastapi-kube
+1. Push container to DockerHub (Optional): i.e.
+   `docker build -t <hub-user>/<repo-name>[:<tag>]` and `docker push <hub-user>/<repo-name>:<tag>`
+   Example of a pushed FastAPI container here:  https://hub.docker.com/repository/docker/noahgift/fastapi-kube
+   > If you had already built your container, you can tag using `docker tag <image-id> <hub-user>/<repo-name>:<tag>` and
+   then push using `docker push <hub-user>/<repo-name>:<tag>`
 2. `minikube start`
 3. `minikube dashboard --url`
 4. Hover over link and "follow link"
-5. Create a deployment: `kubectl create deployment hello-fastapi --image=registry.hub.docker.com/noahgift/fastapi-kube`
+5. Create a deployment: `kubectl create deployment hello-fastapi --image=yasuomaidana/kubernetes-lab:v1.0`
 6. View deployment: `kubectl get deployments`
 7. Create service and expose it: `kubectl expose deployment hello-fastapi --type=LoadBalancer --port=8080`
 8. View services:  `kubectl get service hello-fastapi`
-9.  `minikube service hello-fastapi --url`
+9. `minikube service hello-fastapi --url`
 10. Curl web service: i.e. `curl http://192.168.49.2:31224`
-11.  Cleanup
+11. Cleanup
 12. Cleanup
+
 ```bash
 kubectl delete service hello-fastapi
 kubectl delete deployment hello-fastapi
@@ -22,52 +25,81 @@ minikube stop
 
 ## Notes below
 
-# fastapi-from-zero
-A repository to demonstrate FastAPI
+### Debugging Tips
 
-/docs get to swagger
+Accessing a Minikube service running inside a Dev Container requires two stages of forwarding:
 
-![fastapi](https://user-images.githubusercontent.com/58792/192342466-e043cce7-c4f4-4811-9d0c-68fb884daadf.png)
+Stage 1: Forward traffic from the Minikube cluster to the Dev Container's localhost.
 
+Stage 2: Forward traffic from the Dev Container's localhost to your actual machine (Host) using VS Code.
 
+Here are the three best methods to achieve this, ranked from easiest to most robust.
 
-## Docker
+1. **Using `minikube service` Command** (Easiest):
 
-`docker build .`
-`docker image ls` #find image
-`docker run -p 127.0.0.1:8080:8080 93fa55efa692` <replace with your image>
+   The `minikube service` command automatically handles the necessary port forwarding for you.
 
-### Cloud9 + ECR + App Runner
+   Example:
 
-![continuous-delivery](https://user-images.githubusercontent.com/58792/192845522-09207ae8-0dfb-4d31-b0a3-d396765d0db7.png)
+   ```bash
+   minikube service hello-fastapi --url
+   ```
 
+   This command will provide you with a URL that you can use to access the service directly from your host machine.
+2. `kubectl port-forward` **(Most Robust)**
+   This is often more reliable than minikube service because it forwards a specific port directly from the pod/service
+   to your Dev Container, bypassing Minikube's internal networking quirks.
+    1. Find your Service or Pod name:
+       ```shell
+        kubectl get services
+        ```
+    2. Forward the port: Run this in your terminal. Replace service/my-service with your actual service name.
+       ```shell
+       # Syntax: kubectl port-forward <resource> <local-port>:<container-port>
+       kubectl port-forward service/my-service 8080:8080 --address 0.0.0.0
+       ```
+        - `--address 0.0.0.0` ensures the Dev Container listens on all interfaces, which helps VS Code detect the port
+          easier.
+        - `8080:8080` maps port `8080` on the container to port `8080` on the service. Change the first number if you
+          want a different local port.
+    3. Access in Browser:
+        - VS Code's Ports view will show port 8080.
+        - Click the Globe icon or open http://localhost:8080 in your local browser.
+3. `minikube tunnel` (For LoadBalancers)
+   This method is useful if you're using LoadBalancer services in Minikube.
+    1. Start the tunnel:
+        ```shell
+        minikube tunnel
+        ```
+       This command requires admin privileges because it creates network routes on your host machine.
+    2. Access the Service:
+        - Use `kubectl get services` to find the external IP assigned to your LoadBalancer service.
+        - Access the service using that IP and the specified port.
+        ```bash
+       sudo minikube tunnel
+       ```
+    3. Watch the service : 
+       ```shell
+       kubectl get svc -w
+       ```
+       Wait until the `EXTERNAL-IP` changes from `<pending>` to an IP address (usually 10.xx.xx.xx or similar).
+    4. Forward the Traffic: Because the `EXTERNAL-IP` is still inside the Dev Container, you still need to bridge it to
+       your host. It's usually easier to combine this with Method 2 (Port Forwarding) targeting that specific service port.
 
-* Clone repo into Cloud9 (pick a machine with decent size CPU and RAM if possible, but students should use micro)
-* Add ssh keys to GitHub
-* [resize to bigger disk](https://gist.github.com/wongcyrus/a4e726b961260395efa7811cab0b4516)
-* Create virtualenv and add to bashrc and source
-  `python3 -m venv ~/.venv && echo 'source ~/.venv/bin/activate' >> ~/.bashrc && source ~/.bashrc`
-* cd into checkout and run `make install`
-* Preview running FastAPI app after running:  python main.py
+Troubleshooting
 
-<img width="1835" alt="Screen Shot 2022-09-28 at 12 32 52 PM" src="https://user-images.githubusercontent.com/58792/192836641-cd7ef757-4a4b-4722-bb17-d88980f4e9d4.png">
+- **"Connection Refused"**: Ensure you are using the port listed in the VS Code Ports view, effectively the "Forwarded
+  Port," not necessarily the port inside the container.
 
-* Create ECR repository by right-click in Cloud9
+- **Persisting Ports**: If you want a port (e.g., `8080`) to be always available, add it to your
+  `.devcontainer/devcontainer.json` file:
 
-  <img width="1835" alt="Screen Shot 2022-09-28 at 12 34 44 PM" src="https://user-images.githubusercontent.com/58792/192837619-b4ebd0fc-d464-4c06-a382-0a25c6028579.png">
-
-* Navigate to ECR repo created <cdfastapi> or whatever you named it and follow "push" instructions
-
-  <img width="1835" alt="Screen Shot 2022-09-28 at 12 36 45 PM" src="https://user-images.githubusercontent.com/58792/192838151-ca89bdc1-bb99-40dc-ace1-f059e07ba5f6.png">
-
-* Navigate to AWS App Runner and Setup Continuous Delivery using ECR
-
-  <img width="1835" alt="Screen Shot 2022-09-28 at 12 41 21 PM" src="https://user-images.githubusercontent.com/58792/192839558-7f1f0e55-7f5b-4af6-99f1-66d0512a41d6.png">
-
-* Setup AWS Code Build to push container after each build (which triggers auto-deploy)
-
-  <img width="1835" alt="Screen Shot 2022-09-28 at 12 50 19 PM" src="https://user-images.githubusercontent.com/58792/192843483-e0a48ae6-95c1-4758-8928-40c33939cb9f.png">
-
-
-See following [buildspec.yml](https://github.com/nogibjj/fastapi-from-zero/blob/main/buildspec.yml)
-and [Makefile](https://github.com/nogibjj/fastapi-from-zero/blob/main/Makefile)
+```
+"forwardPorts": [8080],
+"portsAttributes": {
+"8080": {
+"label": "Minikube Service",
+"onAutoForward": "notify"
+}
+}
+```
