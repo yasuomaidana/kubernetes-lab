@@ -3,6 +3,7 @@
 1.  Push container to DockerHub (Optional): i.e.
     `docker build -t <hub-user>/<repo-name>[:<tag>]` and `docker push <hub-user>/<repo-name>:<tag>`
     Example of a pushed FastAPI container here:  https://hub.docker.com/repository/docker/noahgift/fastapi-kube
+    > If you had already built your container, you can tag using `docker tag <image-id> <hub-user>/<repo-name>:<tag>` and then push using `docker push <hub-user>/<repo-name>:<tag>`
 2. `minikube start`
 3. `minikube dashboard --url`
 4. Hover over link and "follow link"
